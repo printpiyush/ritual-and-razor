@@ -1,10 +1,10 @@
 # Salon Queue Management System
 
-**Live demo:** _Pending Vercel deployment — replace this line with your deployed URL before submitting._
-
-**Hosted on:** Vercel (frontend)
+**Live demo:** https://ritual-and-razor.vercel.app
 
 **Staff PIN:** `2468` for `/reception`, `/barber/Raj` (or `/barber/Kishan`, `/barber/Hitesh`), and `/admin`.
+
+**Hosted on:** Vercel (frontend)
 
 ## About
 
@@ -73,7 +73,8 @@ This is a client-side demo gate, not production authentication.
 2. Import the repository at [vercel.com](https://vercel.com).
 3. Vercel auto-detects Vite. Build command: `npm run build`; output directory: `dist`.
 4. Deploy. `vercel.json` rewrites all routes to `index.html`, so refreshing `/status/S-14` or `/reception` does not 404.
-5. Replace the **Live demo** line at the top of this README with the deployed URL.
+5. Deploy. `vercel.json` rewrites all routes to `index.html`, so refreshing `/status/S-14` or `/reception` does not 404.
+6. Re-deploy after any change (`npx vercel --prod` or a push to the linked GitHub repo).
 
 ## Project structure
 
@@ -83,11 +84,13 @@ src/main.jsx           All seven screens, shared queue logic, EN/GU labels
 src/styles.css         Tailwind entry, theme helpers, gold pulse animation
 AGENTS.md              Agent working rules
 prompts.md             Prompts used in this session
+reflection.md          Half-page reflection for submission
 vercel.json            SPA route rewrites
 ```
 
 ## Known limitations
 
-- Sync is same-browser only (see **Storage and sync**).
-- Staff PIN is a client-side demo gate.
-- The live URL is still a placeholder until the Vercel deployment is completed.
+- Sync uses the browser's `localStorage`, so it works across tabs/windows of the same browser profile but **not across separate phones/tablets**. A hosted realtime store (e.g. Firebase or Supabase) would be needed for cross-device sync.
+- Staff PIN is a client-side demo gate, not production authentication.
+- TV chime is not implemented; the called token card flashes gold instead.
+- Average wait is a seeded demo value and does not recompute from history.
