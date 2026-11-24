@@ -1,183 +1,175 @@
-# Salon Screens and Features
+# 02 · Screens & Features
+## Route-level product specification
 
-The app has exactly seven required screens. Use charcoal `#1F2937`, gold `#D4A017`, rounded cards, and clear states throughout. All visible labels, buttons, alerts, and empty states must switch between English and Gujarati from a shared language file. The barber roster is **Raj**, **Kishan**, and **Hitesh**.
+The interface contains seven primary views. The shared shell provides the salon wordmark, navigation, and English/Gujarati toggle on the regular app routes. The TV route is a standalone display view.
 
-## Screen 1: Home (`/`)
+### Screen 1 — Home
+**Route:** `/`  
+**Primary user:** Customer
 
-**Who and why:** Customers discover the salon, see whether the queue is open, and start joining.
+**Purpose:** Introduce the salon, show the queue pulse, and provide the entry point for online joining.
 
-**Top to bottom**
+**Visible content**
+- Ritual & Razor identity and queue status.
+- Live count of customers currently waiting.
+- Approximate wait estimate.
+- Barber cards for Raj, Kishan, and Hitesh with current availability state.
+- Primary Join Queue action.
 
-- Salon name and logo area.
-- Status badge such as `Open - Closes 9 PM` or the closed state.
-- Live summary card: people waiting and approximate total wait.
-- Barber chips with name and status: `Raj`, `Kishan`, `Hitesh`; each can show Busy, Free, or On break.
-- Large gold **Join Queue** button.
-- English/Gujarati language toggle.
+**Interactions**
+- Join Queue navigates to `/join` while online joining is open.
+- When online joining is closed, the action is disabled and the customer is directed to reception for a walk-in.
+- Barber cards are informational.
 
-**Buttons and behavior**
+**Responsive intent**
+- One-column content and a prominent CTA on phones.
+- Expanded summary and barber cards on wider screens.
+- Empty queue copy should remain reassuring and visible.
 
-- **Join Queue** opens `/join` when online joining is open.
-- When online joining is closed, the button is disabled and explains that walk-ins are still allowed.
-- Barber chips are informational and reflect current status.
-- The language toggle updates every label on the screen.
+### Screen 2 — Join Queue
+**Route:** `/join`  
+**Primary user:** Customer
 
-**Responsive behavior and states**
+**Purpose:** Collect the information needed to create a queue entry.
 
-- Mobile-first single-column layout with a prominent thumb-friendly CTA.
-- Tablet expands the live summary and barber cards without changing the order of information.
-- Empty queue says, in the selected language, that no one is waiting and customers can walk right in.
-- Loading and unavailable-salon states are friendly and do not expose technical errors.
+**Visible content**
+- Customer name and phone number.
+- Enabled service cards, each showing English/Gujarati name, duration, and price.
+- Barber preference: Any barber, Raj, Kishan, or Hitesh.
+- Live summary of selected-service price, duration, and estimated wait.
+- Confirm action.
 
-## Screen 2: Join Queue (`/join`)
+**Interactions**
+- Phone input accepts digits and is limited to 10 characters; submission validates exactly 10 digits.
+- At least one service is required; up to three may be selected.
+- Service selection recalculates price and service duration.
+- A repeat submission for a phone with an existing active online spot opens that spot instead of adding another.
+- Successful submission issues the next token and navigates to `/status/:token`.
+- Online joining is blocked when the queue is closed.
 
-**Who and why:** A customer provides contact details, chooses services and a barber preference, reviews the estimate, and joins once.
+**Responsive intent**
+- Full-width fields and service cards on phones.
+- Two-column service grid on larger screens.
+- Keep the live total visible while selecting services.
 
-**Top to bottom**
+### Screen 3 — My Status
+**Route:** `/status/:token`  
+**Primary user:** Customer
 
-- Name field.
-- Phone field with exactly 10-digit validation.
-- Service cards with multi-select, maximum three services. Include realistic examples such as Haircut (30 min, Rs 150), Beard trim (15 min, Rs 80), and Hair spa (45 min, Rs 400); services carry English and Gujarati names, minutes, price, and on/off state.
-- Barber picker: `Any barber (fastest)`, `Raj`, `Kishan`, or `Hitesh`.
-- Live summary: total service minutes, total price, and expected wait.
-- Gold **Confirm** button.
-- English/Gujarati language toggle.
+**Purpose:** Show one customer's progress through the queue.
 
-**Buttons and behavior**
-
-- Service cards toggle selection and immediately recalculate total time, price, and expected wait.
-- The third selected service is allowed; a fourth selection is blocked with a clear message.
-- **Confirm** validates name, phone, at least one service, and queue-open state. A valid submission creates a token and opens `/status/:id`.
-- If the phone already has an active spot, show the existing spot instead of creating a duplicate.
-- A disabled or unavailable service cannot be selected.
-
-**Responsive behavior and states**
-
-- Single-column cards and full-width controls on phones; tablet can use a two-column service grid.
-- Preserve a sticky or visible summary on small screens so the total remains easy to review.
-- Show inline validation errors, closed-queue messaging, and a recoverable synchronization error.
-
-## Screen 3: My Status (`/status/:id`)
-
-**Who and why:** A customer monitors one active queue spot and knows when to travel to the salon.
-
-**Top to bottom**
-
-- Large token, for example `S-14`.
-- Position, for example `4th in line`.
-- Circular countdown or prominent estimate such as `about 35 min`, updated automatically.
+**Visible content**
+- Large token and ordinal position.
+- Approximate wait estimate.
 - Selected services and preferred barber.
-- Contextual banner at second position: `Start coming to the salon`.
-- Full-screen gold called state: `It's your turn! Go to Raj`, `Go to Kishan`, or `Go to Hitesh`.
-- **Cancel my spot** button.
-- English/Gujarati language toggle.
+- “Start coming to the salon” message at second position.
+- Called, in-chair, done, cancelled, no-show, and missing-token states.
 
-**Buttons and behavior**
+**Interactions**
+- Cancel my spot opens a confirmation step; confirmation moves the entry to Cancelled.
+- Called state identifies the assigned barber.
+- Status updates arrive through the shared state mechanism; no manual refresh is required during normal connected use.
 
-- **Cancel my spot** opens a confirmation dialog; confirming moves the spot to Cancelled and removes it from active waiting order.
-- Called state is visually emphatic, may pulse gently, and may use phone vibration where supported.
-- Status and wait update automatically without manual refresh.
+**Responsive intent**
+- Token, position, estimate, and called state should be immediately readable on a phone.
+- Terminal states provide a clear next step or return-to-home action.
 
-**Responsive behavior and states**
+### Screen 4 — Reception
+**Route:** `/reception`  
+**Primary user:** Receptionist / owner  
+**Preferred device:** Tablet or desktop
 
-- Token and called state are legible on a phone at a glance; tablet may add explanatory detail.
-- Handle missing or expired tokens with a clear recovery message.
-- Show a completed, cancelled, or no-show state without offering invalid actions.
+**Purpose:** Operate the queue and assign customers to eligible barbers.
 
-## Screen 4: Reception Dashboard (`/reception`) - tablet
+**Visible content**
+- Queue open/closed status and local clock.
+- Add walk-in form.
+- Barber cards showing barber name, availability, current customer, and time remaining.
+- Ordered waiting list with token, customer, services, preferred barber, elapsed wait, and estimated wait.
+- Amber emphasis for customers who have waited over 60 minutes.
 
-**Who and why:** Reception manages the live queue and assigns the next eligible customer to a barber.
+**Interactions**
+- Add walk-in validates name and a 10-digit phone number, then appends the entry to the queue.
+- Call next is enabled only for an on-duty barber whose state is Available. It chooses the earliest waiting entry matching that barber or Any.
+- A called customer becomes eligible for No-show after the 10-minute grace period.
+- Reception can cancel a waiting entry after a confirmation step.
+- No-show releases the barber assignment and increments the no-show counter.
 
-**Top to bottom and left to right**
+**Responsive intent**
+- Barber cards should be easy to scan above the queue table.
+- The waiting list may scroll horizontally on narrow screens rather than hiding operational columns.
 
-- Header with queue open/closed indicator, current time, language toggle, and **+ Add walk-in**.
-- Barber cards for Raj, Kishan, and Hitesh: current customer, time left, barber status, and **Call next**.
-- Ordered waiting list: token, name, services, preferred barber, waiting time, **No-show**, and **Cancel** actions.
-- Waiting longer than 60 minutes is highlighted in amber.
+### Screen 5 — Barber View
+**Route:** `/barber/:name`  
+**Primary user:** Barber  
+**Preferred device:** Phone
 
-**Buttons and behavior**
+**Purpose:** Let a barber progress the customer assigned to their chair.
 
-- **+ Add walk-in** opens a quick form for name, phone, services, and preferred barber; valid walk-ins join at the end of the same queue.
-- **Call next** selects the earliest eligible customer according to `docs/03-flows-rules.md`, changes them to Called, and updates the customer view and TV.
-- **No-show** is available for a Called customer after the 10-minute grace period and removes them from active service order.
-- **Cancel** confirms before moving a waiting customer to Cancelled.
-- Barber status can be reflected here but barber work actions happen in Barber View.
+**Visible content**
+- Barber name and availability control.
+- Current customer, token, selected services, and elapsed service timer.
+- Start or Done action, depending on the current status.
+- Next eligible customer preview.
 
-**Responsive behavior and states**
+**Interactions**
+- Start moves the assigned customer from Called to In chair and starts the timer.
+- Done moves the customer to Done, clears the chair, marks the barber Available, and increments the served counter.
+- Break/Available can be toggled only when the barber has no current customer.
+- Updates are reflected in other connected views through shared state.
 
-- Optimized for a 10-inch tablet in landscape: barber cards stay easy to scan and the waiting list remains ordered.
-- On narrower windows, stack barber cards above the list without hiding actions.
-- Empty queue says no one is waiting; an unavailable or on-break barber explains why Call next may skip them.
+**Responsive intent**
+- One-handed layout with large controls and tap targets of at least 44px.
+- Empty-chair and on-break states remain explicit.
 
-## Screen 5: Barber View (`/barber/:name`) - phone
+### Screen 6 — Waiting Area TV
+**Route:** `/display`  
+**Primary user:** Waiting-area visitors  
+**Preferred device:** 16:9 TV
 
-**Who and why:** Raj, Kishan, or Hitesh manages the customer currently in their chair and signals availability.
+**Purpose:** Make barber assignments and the upcoming queue visible from a distance.
 
-**Top to bottom**
+**Visible content**
+- Dark, high-contrast display.
+- One card per barber with initials, name, and current token or availability.
+- Up to five upcoming waiting tokens with approximate estimates.
+- A gold pulse on the currently called token.
 
-- Barber name and current availability status.
-- Current customer card with name, services, and timer since start.
-- Large **Start** button before service begins; after starting, show **Done**.
-- `Next for you` preview with token, customer name, and service.
-- **On break / Available** toggle.
-- English/Gujarati language toggle.
+**Interactions**
+- Display-only view; it has no queue-mutating controls.
+- Changes appear when the shared state updates.
+- The current implementation uses a visual gold flash; audio chime is not implemented.
+- This route does not currently show its own language toggle.
 
-**Buttons and behavior**
+**Responsive intent**
+- Large typography, generous spacing, and a 16:9-friendly composition take priority over dense controls.
 
-- **Start** moves the called customer to In chair and starts the timer.
-- **Done** moves the customer to Done and frees the barber for the next eligible customer.
-- **On break / Available** changes barber eligibility and communicates the state to customers and reception.
-- Work actions update Reception, TV, and the customer's status automatically.
+### Screen 7 — Owner Settings
+**Route:** `/admin`  
+**Primary user:** Salon owner
 
-**Responsive behavior and states**
+**Purpose:** Manage the daily operating switches used by the prototype.
 
-- Phone-first, one-handed layout with tap targets at least 44px.
-- Empty chair state says no current customer; on-break state clearly explains that new assignments pause.
-- Prevent Start or Done when the current status does not permit that action.
+**Visible content**
+- Service list with English/Gujarati name, minutes, price, and Enabled/Disabled control.
+- Barber duty toggles for Raj, Kishan, and Hitesh.
+- Online joining state and Open/Close action.
+- Served count, average wait, and no-show metrics.
 
-## Screen 6: Waiting Area TV (`/display`)
+**Interactions**
+- Service toggle controls whether it appears in Join Queue.
+- Barber duty toggle affects assignment eligibility.
+- Open/Close changes online joining; walk-ins remain available at reception.
+- Served and no-show counts update with the corresponding queue actions.
+- Average wait is currently a seeded demo value; it is not recalculated from completed services.
+- Service price and duration are displayed but are not editable in this screen.
 
-**Who and why:** Customers in the salon see who is being served and which tokens are next.
+**Responsive intent**
+- Stack settings groups on phones.
+- Use a two-column settings and metrics layout on wider screens.
 
-**Layout**
+### Access and navigation
 
-- Full-screen, high-contrast charcoal display.
-- One row or card per barber with name, photo/avatar, and `Now: S-12` or an empty-chair state for Raj, Kishan, and Hitesh.
-- `Up next` list of five tokens with estimated times.
-- Newly called token flashes gold and plays a short chime where supported.
-
-**Buttons and behavior**
-
-- This is a display screen rather than a staff-control surface; it has no queue-mutating buttons.
-- New calls, starts, completions, cancellations, and no-shows update automatically.
-
-**Responsive behavior and states**
-
-- Designed for TV readability from approximately five metres; large type and strong contrast take priority over density.
-- Adapt to common 16:9 screens and remain legible on a tablet preview.
-- Empty barber and empty queue states are explicit; do not show stale tokens.
-
-## Screen 7: Owner Settings (`/admin`)
-
-**Who and why:** The owner controls today's services, barber roster, online joining, and summary metrics.
-
-**Top to bottom**
-
-- Services list with name in English and Gujarati, duration in minutes, price, and on/off control.
-- Barbers on duty today with toggles for Raj, Kishan, and Hitesh.
-- Queue switch: Open / Closed for online joining.
-- Today's stats: customers served, average wait, and no-shows.
-- English/Gujarati language toggle.
-
-**Buttons and behavior**
-
-- Service on/off changes what can be selected on Join Queue; duration and price are reflected in the live summary.
-- Barber duty toggles affect eligible assignment and visible availability.
-- Closing online joining disables remote joining with a clear message while still allowing receptionist walk-ins.
-- Stats reflect the current day's queue activity.
-
-**Responsive behavior and states**
-
-- Use readable stacked settings sections on mobile and a denser two-column layout on tablet/desktop.
-- Confirm destructive or scope-changing actions where appropriate and show save/error feedback.
-- Empty stats use zero values with explanatory labels rather than blank cards.
+- The regular app header links Home, Join Queue, Reception, Barber, Waiting Area TV, and Admin.
+- Reception, Barber, and Admin show a demo PIN gate (`2468`). This is client-side demonstration access, not production authentication.
+- My Status is reached after joining or by opening a token route.

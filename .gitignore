@@ -1,17 +1,15 @@
+# Dependencies and build output
 node_modules/
 dist/
+
+# Local environment and deployment state
 .env
 .env.*
 !.env.example
 .vercel/
+
+# Logs, temporary patch files, and local backups
 *.log
-
-.vercel
-
-.env
-.env.*
-!.env.example
 .supabase-patch/
 src/main-before-supabase-backup.jsx
-
 /main-before-supabase.jsx

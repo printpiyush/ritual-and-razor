@@ -1,41 +1,48 @@
-# Salon Queue Project Brief
+# 01 · Project Brief
+## Ritual & Razor — Salon Queue Management System
 
-## Problem
+### Product summary
 
-Customers can spend one to two hours waiting at a busy salon without knowing when their turn will arrive. Unclear order and barber availability cause avoidable frustration, early departures, and arguments about who came first.
+Ritual & Razor is a salon queue prototype that gives customers a clear token and approximate wait while providing salon staff with a shared operational view. The intended experience reduces uncertainty around queue order, barber preference, and service progress.
 
-This app gives customers a live place in line and gives salon staff one shared view of the queue, barber work, and waiting-area announcements.
+### Problem
 
-## Users
+At busy periods, customers may wait without knowing their position or when they will be called. Staff also need a consistent way to manage walk-ins, assign the next eligible customer, and keep the waiting area informed.
 
-- **Customer:** joins remotely or through a walk-in, chooses services and a preferred barber, and follows live status.
-- **Receptionist or owner:** adds walk-ins, manages the waiting list, calls the next customer, handles cancellations and no-shows, and controls whether online joining is open.
-- **Barber:** sees the current customer, starts and completes the service, and marks availability or break status.
-- **Waiting-area audience:** reads the TV display for current and upcoming tokens.
+### Users and jobs to be done
 
-## Must-have features
+| User | Primary need |
+|---|---|
+| Customer | Join the queue, choose services and a barber preference, and track the token |
+| Receptionist / owner | Add walk-ins, call the next eligible customer, and manage queue exceptions |
+| Barber | See the assigned customer, start and finish the service, and mark a break |
+| Waiting-area visitor | Read the currently served tokens and the next customers |
 
-1. Customers can join from a phone by selecting one or more services and either **Any barber**, **Raj**, **Kishan**, or **Hitesh**.
-2. The customer receives a token, live queue position, estimated wait, and a **Start coming to the salon** message when they are second in line.
-3. A receptionist dashboard supports walk-ins, ordered waiting-list management, **Call next**, **No-show**, and **Cancel**.
-4. Each barber has a view for the current customer, service timer, **Start**, **Done**, and **On break / Available**.
-5. A waiting-area TV shows each barber's current token and the next five tokens, with a gold alert when a customer is called.
-6. Owner settings manage services, service duration and price, which barbers are on duty, online queue open/closed state, and today's stats.
-7. All screens support English and Gujarati labels through a language toggle.
-8. Phone, tablet, and TV windows stay synchronized without a manual refresh.
+### Core scope
 
-## Don't build
+1. Seven connected views: Home, Join Queue, My Status, Reception, Barber View, Waiting Area TV, and Owner Settings.
+2. Customer details with a 10-digit phone check, one to three service selections, and barber preference.
+3. Token issuance, queue position, approximate wait, and a second-in-line “Start coming” message.
+4. Reception controls for walk-ins, Call next, cancellation, and no-show.
+5. Barber controls for Start, Done, and break/available state.
+6. TV display for current barber assignments and up to five waiting tokens.
+7. Owner controls for online queue availability, service availability, and barber duty.
+8. English and Gujarati interface copy for the main application views.
+9. Shared state through Supabase Postgres and Supabase Realtime, with a browser-local fallback for same-browser use.
 
-- Online payment.
-- Future-date appointments.
-- SMS or WhatsApp messaging.
-- Loyalty or rewards features.
+### Explicit non-goals
+
+- Online payment or billing.
+- Future-date appointments or calendar booking.
+- SMS, WhatsApp, or push-message delivery.
+- Loyalty, rewards, or membership management.
 - Multiple salon branches.
+- Production-grade authentication, authorization, or customer-data handling.
 
-## Look and feel
+### Visual direction
 
-Premium salon feel: dark charcoal `#1F2937` with gold `#D4A017` accents, clean rounded cards, mobile-first layouts, clear tap targets, and readable TV typography. Visible labels must be available in English and Gujarati.
+A premium, calm salon identity built around charcoal `#1F2937`, gold `#D4A017`, cream `#F8F5ED`, and ink `#111827`. Use expressive display typography, restrained cards, readable information density, and mobile-first layouts.
 
-## Scope boundary
+### Scope clarifications
 
-This planning set defines the UI, behavior, and queue rules. Implementation follows the build plan in the assignment guide and must not add features outside this brief.
+The current prototype shows service duration and price and allows services to be enabled/disabled; it does not provide price/duration editing. The average-wait metric is seeded demo data. The TV view highlights a newly called token visually but does not play a chime. These are known implementation boundaries, not hidden assumptions.

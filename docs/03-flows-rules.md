@@ -1,71 +1,104 @@
-# Salon Flows and Queue Rules
+# 03 · Flows, Queue Rules & Test Checklist
 
-## Flow: remote customer
+## Customer flow — online join
 
-1. Customer opens Home, sees the salon and queue status, and taps **Join Queue**.
-2. Customer chooses services and `Any barber`, `Raj`, `Kishan`, or `Hitesh`, then confirms valid name and 10-digit phone details.
-3. The app creates a token such as `S-14`, shows the position and estimated wait on My Status, and keeps it updated automatically.
-4. When the customer reaches second in line, My Status shows `Start coming to the salon`.
-5. Reception taps **Call next** on the eligible barber's card. The spot becomes Called, the customer's phone shows `It's your turn! Go to Raj`, `Go to Kishan`, or `Go to Hitesh`, and the TV flashes the token.
-6. The barber taps **Start**, then **Done**. The spot becomes In chair, then Done, and disappears from active waiting order.
+1. Customer opens Home and checks whether online joining is open.
+2. Customer opens Join Queue, enters a name and 10-digit phone number, selects one to three enabled services, and chooses Any or a named barber.
+3. The summary displays the combined service price and duration plus an approximate wait.
+4. Confirm creates a token and opens My Status.
+5. The status view shows position and estimate. At position two it shows the “Start coming” message.
+6. Reception calls the next eligible customer for an available barber.
+7. The customer sees the called state and the assigned barber.
+8. The barber starts the service, then marks it Done.
 
-## Flow: walk-in
+## Customer flow — walk-in
 
-1. Reception taps **+ Add walk-in**.
-2. Reception enters name, phone, services, and an optional barber preference.
-3. The walk-in joins the same queue at the end, following first come, first served order.
-4. The customer receives the same token and status behavior as a remote customer.
+1. Reception opens Add walk-in.
+2. Reception enters the customer's name, 10-digit phone number, one enabled service, and a barber preference.
+3. The entry is appended to the same waiting list and receives the next token.
+4. Reception uses the same Call next and queue-management workflow.
 
-## Statuses and allowed moves
+## Status model
 
-- `Waiting -> Called -> In chair -> Done`.
-- `Waiting -> Cancelled`.
-- `Called -> No-show`.
-- Statuses never move backward.
-- A customer may not be simultaneously active in two spots.
+| Current status | Allowed next status | Trigger |
+|---|---|---|
+| Waiting | Called | Reception selects the customer for an eligible barber |
+| Waiting | Cancelled | Customer or reception confirms cancellation |
+| Called | In chair | Assigned barber taps Start |
+| Called | No-show | Reception marks no-show after the 10-minute grace period |
+| In chair | Done | Assigned barber taps Done |
 
-## Queue rules
+Terminal states are Done, Cancelled, and No-show. A terminal entry is not returned to the active waiting list. If a no-show arrives later, reception adds a new walk-in entry at the end.
 
-- First come, first served.
-- **Call next** for a barber selects the earliest waiting customer who chose that barber or chose `Any barber`.
-- A customer who chose Raj is never assigned to Kishan or Hitesh; the same barber-preference rule applies independently to Kishan and Hitesh.
-- A customer who chose `Any barber` may be assigned to the eligible barber who is calling next.
-- A barber has only one customer in the chair at a time.
-- Waiting time is approximately `total minutes of services ahead / barbers working`.
-- Use the number of working, eligible barbers in the estimate; do not divide by zero when no barber is available.
-- One active spot per phone number. A duplicate join shows the existing spot instead of creating another.
-- A service selection may contain no more than three services.
+## Assignment rules
 
-## Waiting, cancellation, and no-show rules
+- Queue order is first come, first served, based on `createdAt`.
+- Call next is available only when the barber is on duty and currently Available.
+- For barber X, select the earliest Waiting customer whose preference is X or Any.
+- A customer who chose a named barber must not be silently assigned to a different barber.
+- A barber can have only one assigned customer at a time.
+- A barber with a current customer cannot be toggled onto a break.
 
-- Waiting longer than 60 minutes is highlighted in amber on Reception.
-- When a Called customer is not present after 10 minutes, reception can mark them No-show.
-- If a no-show arrives later, reception adds them again at the end with a new token.
-- A customer can cancel their own spot from My Status only after confirmation; the status becomes Cancelled.
-- Reception can cancel a waiting spot after confirmation.
-- Online joining closes 30 minutes before closing; walk-ins are still allowed.
-- If Raj, Kishan, or Hitesh is on break, customers who specifically chose that barber see that the barber is on break; they are not silently reassigned.
-- Closing online joining disables the Home/Join action with a clear message but does not close reception walk-ins.
+## Validation and queue rules
 
-## Synchronization rules
+- Online Join Queue requires a non-empty name, exactly 10 phone digits, at least one service, no more than three services, and an open queue.
+- The Join Queue screen checks for an existing active spot for the same phone (`Waiting`, `Called`, or `In chair`) and opens that spot instead of creating another.
+- The Reception walk-in form validates name and 10-digit phone but currently does not perform the same duplicate-phone check.
+- A service must be enabled to appear in the online selection list and the walk-in service selector.
+- Waiting entries over 60 minutes receive amber emphasis in Reception.
+- A Called entry can be marked No-show after 10 minutes.
+- Online joining is controlled by the Owner Settings open/closed switch. Reception walk-ins remain available while online joining is closed.
 
-- Changes made in Join Queue, Reception, Barber View, Owner Settings, and Waiting Area TV propagate to all open views automatically.
-- Customer called state, Start/Done changes, queue closure, and barber break state should appear across views within approximately five seconds.
-- Do not require a manual refresh for normal queue operations.
+## Waiting-time estimate
+
+The current estimate is an approximation:
+
+1. Find the customers in Waiting status that are ahead of the target entry.
+2. Sum the service minutes for those entries.
+3. Divide by the number of on-duty barbers who are not on break and are eligible for the target's barber preference.
+4. Round to the nearest whole minute and clamp the result to zero or above.
+5. If there are no eligible working barbers, show an unavailable marker rather than dividing by zero.
+
+This is a simple classroom estimate; it does not model exact chair schedules, service overlap, arrival uncertainty, or future barber availability.
+
+## Shared-state behavior
+
+- The app's source of truth is the singleton JSONB row `public.salon_state` with `id = 1`.
+- UI state is cached in `localStorage`.
+- `BroadcastChannel` and the browser `storage` event synchronize tabs in the same browser profile.
+- Supabase Realtime propagates row updates to other connected devices when the Supabase environment and database policy are configured correctly.
+- The local fallback does not provide cross-device synchronization by itself.
 
 ## Test checklist
 
-- [ ] Join with two services -> correct total time and price are shown.
-- [ ] Same phone joins twice -> existing spot is shown and no duplicate is created.
-- [ ] Call next for Hitesh skips a customer who chose Raj.
-- [ ] Call next for Raj skips a customer who chose Kishan or Hitesh.
-- [ ] Call next can select a customer who chose Any barber.
-- [ ] Call next -> the customer's phone shows `It's your turn` within five seconds.
-- [ ] Start and Done on Barber View update Reception and TV.
-- [ ] No-show, then re-add -> the customer goes to the end with a new token.
-- [ ] Close online queue -> Join button is disabled with a clear message while walk-ins remain possible.
-- [ ] Language toggle switches all labels to Gujarati and back to English.
-- [ ] Waiting time goes down as customers finish.
-- [ ] Waiting longer than 60 minutes is highlighted in amber.
-- [ ] A barber on break is shown as unavailable and does not receive an invalid assignment.
-- [ ] Phone, tablet, and TV windows stay in sync without a manual refresh.
+Use synthetic customer data only.
+
+### Customer experience
+- [ ] Join with two services and confirm the displayed total price and duration.
+- [ ] Try an empty name, an invalid phone, and no selected service; verify validation.
+- [ ] Select three services, then try to select a fourth; verify the limit.
+- [ ] Submit a phone number that already has an active online spot; verify the existing token opens.
+- [ ] Join while online joining is closed; verify the disabled state and walk-in guidance.
+- [ ] Check position two and confirm the “Start coming” message.
+- [ ] Cancel a waiting spot and confirm it is removed from the active waiting order.
+
+### Reception and barber operations
+- [ ] Call next for Hitesh while the earliest waiting entry prefers Raj; verify it is skipped.
+- [ ] Call next for a barber and verify an Any preference can be assigned.
+- [ ] Verify Call next is unavailable for an off-duty, busy, or on-break barber.
+- [ ] Verify No-show is disabled until the 10-minute grace period has elapsed.
+- [ ] Mark a called entry No-show, then add the customer again; verify a new token at the end.
+- [ ] Start and complete a service; verify In chair, Done, chair release, and served counter behavior.
+- [ ] Toggle a barber break while the chair is empty; verify assignment eligibility updates.
+
+### TV, owner, language, and sync
+- [ ] Confirm the TV shows current assignments and up to five waiting tokens.
+- [ ] Confirm a newly called token flashes gold on the TV.
+- [ ] Disable a service in Owner Settings; verify it disappears from Join Queue.
+- [ ] Toggle barber duty and verify the roster/assignment state updates.
+- [ ] Close and reopen online joining; verify the Home and Join states.
+- [ ] Switch English/Gujarati on the regular app shell and inspect important labels.
+- [ ] Open separate browser contexts and test remote queue changes.
+- [ ] Open the deployed site on a phone and desktop; make a test change and verify both update without refresh.
+
+Refer to `docs/05-verification.md` for checks already confirmed during the project session and those still pending.
