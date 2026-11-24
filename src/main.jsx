@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
+import { supabase } from './supabase'
 
 const STORE_KEY = 'salon-queue-state-v1'
 
@@ -45,19 +46,109 @@ function load() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || se
 function useSalonStore() {
   const [state, setState] = useState(load)
   const channel = useRef(null)
+  const localChannelRef = useRef(null)
+  const remoteReady = useRef(false)
+  const lastRemoteState = useRef('')
+
   useEffect(() => {
-    channel.current = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('salon-queue-sync') : null
-    const sync = () => setState(load())
-    window.addEventListener('storage', sync)
-    channel.current?.addEventListener('message', sync)
-    return () => { window.removeEventListener('storage', sync); channel.current?.close() }
+    let active = true
+    const applyRemote = (remoteState) => {
+      if (!active || !remoteState || typeof remoteState !== 'object') return
+      const serialized = JSON.stringify(remoteState)
+      lastRemoteState.current = serialized
+      try { localStorage.setItem(STORE_KEY, serialized) } catch (error) { console.warn('Could not update local cache:', error) }
+      setState(remoteState)
+    }
+
+    const initializeRemote = async () => {
+      if (!supabase) return
+      try {
+        const { data, error } = await supabase
+          .from('salon_state')
+          .select('state')
+          .eq('id', 1)
+          .maybeSingle()
+        if (error) throw error
+
+        if (data?.state && Object.keys(data.state).length > 0) {
+          applyRemote(data.state)
+        } else {
+          // Seed the shared database once from the existing local application state.
+          const initialState = load()
+          const { error: seedError } = await supabase
+            .from('salon_state')
+            .upsert({ id: 1, state: initialState, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+          if (seedError) throw seedError
+          applyRemote(initialState)
+        }
+        remoteReady.current = true
+        console.info('Ritual & Razor: Supabase database connected.')
+      } catch (error) {
+        remoteReady.current = false
+        console.error('Supabase initialization failed; using local storage fallback:', error)
+      }
+    }
+
+    initializeRemote()
+
+    if (supabase) {
+      channel.current = supabase
+        .channel('salon-state-sync')
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'salon_state',
+          filter: 'id=eq.1',
+        }, (payload) => applyRemote(payload.new?.state))
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error('Supabase Realtime subscription status:', status)
+          }
+        })
+    }
+
+    // Keep the existing same-browser tab synchronization as a local fallback.
+    const localSync = () => {
+      try { setState(load()) } catch (error) { console.warn('Local tab sync failed:', error) }
+    }
+    const localChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('salon-queue-sync') : null
+    localChannelRef.current = localChannel
+    localChannel?.addEventListener('message', localSync)
+    window.addEventListener('storage', localSync)
+
+    return () => {
+      active = false
+      window.removeEventListener('storage', localSync)
+      localChannel?.removeEventListener('message', localSync)
+      localChannel?.close()
+      localChannelRef.current = null
+      if (channel.current && supabase) supabase.removeChannel(channel.current)
+      channel.current = null
+    }
   }, [])
-  const update = (recipe) => setState((previous) => {
-    const next = recipe(structuredClone(previous))
-    localStorage.setItem(STORE_KEY, JSON.stringify(next))
-    channel.current?.postMessage('sync')
-    return next
-  })
+
+  // Persist every app-state change centrally. Realtime events update lastRemoteState
+  // first, preventing the receiving device from writing the same snapshot back.
+  useEffect(() => {
+    const serialized = JSON.stringify(state)
+    try { localStorage.setItem(STORE_KEY, serialized) } catch (error) { console.warn('Local cache save failed:', error) }
+    localChannelRef.current?.postMessage('sync')
+
+    if (!supabase || !remoteReady.current || serialized === lastRemoteState.current) return
+    lastRemoteState.current = serialized
+    const persistRemote = async () => {
+      const { error } = await supabase
+        .from('salon_state')
+        .upsert({ id: 1, state, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+      if (error) {
+        lastRemoteState.current = ''
+        console.error('Could not save salon state to Supabase:', error)
+      }
+    }
+    persistRemote()
+  }, [state])
+
+  const update = (recipe) => setState((previous) => recipe(structuredClone(previous)))
   return [state, update]
 }
 
