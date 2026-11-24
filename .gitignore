@@ -13,3 +13,5 @@ dist/
 !.env.example
 .supabase-patch/
 src/main-before-supabase-backup.jsx
+
+/main-before-supabase.jsx
