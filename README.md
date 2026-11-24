@@ -4,7 +4,7 @@
 **Live demo:** [ritual-and-razor.vercel.app](https://ritual-and-razor.vercel.app)  
 **Staff test PIN:** `2468` — `/reception`, `/barber/Raj`, `/barber/Kishan`, `/barber/Hitesh`, `/admin`  
 **Hosting:** Vercel · **Data & realtime:** Supabase
-**Student ID:**202612092
+**Student ID:** 202612092
 <p>
   <img alt="React" src="https://img.shields.io/badge/React-UI-20232A?logo=react&logoColor=61DAFB">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-build-646CFF?logo=vite&logoColor=white">
